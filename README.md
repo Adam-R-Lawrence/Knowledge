@@ -1,3 +1,9 @@
+---
+title: Personal Knowledge Database
+description: A plain‑Markdown knowledge base with consistent metadata and structure.
+tags: [knowledge, markdown]
+---
+
 # Personal Knowledge Database
 
 ## Purpose
@@ -7,7 +13,8 @@ Store and organize notes on various topics in plain Markdown files.
 - One concept per file.
 - Use descriptive, kebab-case names ending in `.md` (e.g., `photopolymerization.md`).
 
-## Front Matter Schema (optional)
+## Metadata Front Matter
+YAML front matter sits at the top of each note between `---` markers. It is metadata only and does not render in Markdown viewers.
 ```yaml
 ---
 title: Note Title
