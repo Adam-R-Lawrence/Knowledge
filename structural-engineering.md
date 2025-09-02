@@ -10,9 +10,10 @@ tags: [structures, statics]
 - Force systems:
   - Colinear forces: Lines of action on the same straight line; combine algebraically along that line.
   - Non-colinear forces: Lines of action differ; require vector sums and can induce a resultant moment.
-  - Couple: Two equal, opposite, parallel forces separated by distance; zero net force, pure moment M = F·d independent of point.
+  - Couple: Two equal, opposite, parallel forces separated by distance; zero net force, pure moment M = F·d independent of point. Intuition: push up on the left end and down on the right; forces cancel in translation but both spin the bar the same way, so rotations add.
 - Resultants: An equivalent single force and/or moment that replaces a system of forces.
 - Moment: Tendency of a force to cause rotation about a point or axis.
+- Lever arm: Perpendicular distance from a force's line of action to the pivot; moment M = F × d.
 - Bending: Curvature due to internal moments; tension on one side, compression on the other.
 - Buckling: Sudden lateral instability of compression members above a critical load.
 - Loads:
