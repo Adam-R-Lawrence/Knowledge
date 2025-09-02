@@ -13,6 +13,8 @@ tags: [structures, statics]
   - Couple: Two equal, opposite, parallel forces separated by distance; zero net force, pure moment M = F·d independent of point.
 - Resultants: An equivalent single force and/or moment that replaces a system of forces.
 - Moment: Tendency of a force to cause rotation about a point or axis.
+- Bending: Curvature due to internal moments; tension on one side, compression on the other.
+- Buckling: Sudden lateral instability of compression members above a critical load.
 - Loads:
   - Dead loads: Permanent, static loads from self-weight and fixed construction.
   - Live loads: Transient, movable loads from occupancy and use.
@@ -29,7 +31,6 @@ tags: [structures, statics]
   - Tension: Axial action causing elongation; induces tensile normal stress.
   - Compression: Axial action causing shortening; may trigger buckling in slender members.
   - Shear stress: Tangential stress from transverse shear or torsion; drives sliding along planes.
-  - Bending: Internal moment causing curvature; tension on one side, compression on the other.
   - Torsion: Twisting due to applied torque; produces shear stress over the cross-section.
   - Young's modulus: Material stiffness parameter E; slope of elastic stress–strain.
   - Stiffness: Structural resistance to deformation (k = load/deflection); depends on E and geometry.
