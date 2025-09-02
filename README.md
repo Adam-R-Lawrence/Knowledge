@@ -1,8 +1,8 @@
----
+<!--
 title: Personal Knowledge Database
 description: A plain‑Markdown knowledge base with consistent metadata and structure.
 tags: [knowledge, markdown]
----
+-->
 
 # Personal Knowledge Database
 
@@ -14,13 +14,13 @@ Store and organize notes on various topics in plain Markdown files.
 - Use descriptive, kebab-case names ending in `.md` (e.g., `photopolymerization.md`).
 
 ## Metadata Front Matter
-YAML front matter sits at the top of each note between `---` markers. It is metadata only and does not render in Markdown viewers.
-```yaml
----
+Place invisible metadata at the very top inside an HTML comment. This keeps it hidden on GitHub while remaining parseable by tools.
+```html
+<!--
 title: Note Title
 tags: [tag1, tag2]
 date: YYYY-MM-DD
----
+-->
 ```
 
 ## Note Structure Guidelines

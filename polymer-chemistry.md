@@ -1,7 +1,7 @@
----
+<!--
 title: Polymer Chemistry
 tags: [polymers, photochemistry]
----
+-->
 
 ## Polymer Chemistry
 

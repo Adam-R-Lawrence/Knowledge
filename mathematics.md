@@ -1,7 +1,7 @@
----
+<!--
 title: Mathematics
 tags: [math]
----
+-->
 
 ## Mathematics
 

@@ -1,7 +1,7 @@
----
+<!--
 title: Computer Methods
 tags: [algorithms, numerical-methods]
----
+-->
 
 ## Computer Methods
 

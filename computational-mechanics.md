@@ -1,7 +1,7 @@
----
+<!--
 title: Computational Mechanics
 tags: [mechanics, simulation, fem]
----
+-->
 
 ## Computational Mechanics
 

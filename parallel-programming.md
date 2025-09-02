@@ -1,7 +1,7 @@
----
+<!--
 title: Parallel Programming
 tags: [parallel, concurrency]
----
+-->
 
 ## Parallel Programming
 

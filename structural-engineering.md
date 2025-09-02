@@ -1,7 +1,7 @@
----
+<!--
 title: Structural Engineering
 tags: [structures, statics]
----
+-->
 
 ## Structural Engineering
 
