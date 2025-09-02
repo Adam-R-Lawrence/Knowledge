@@ -1,7 +1,6 @@
 ---
 title: Computational Mechanics
 tags: [mechanics, simulation, fem]
-date: 2025-09-02
 ---
 
 ## Computational Mechanics

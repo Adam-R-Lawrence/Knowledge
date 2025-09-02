@@ -1,7 +1,6 @@
 ---
 title: Mathematics
 tags: [math]
-date: 2025-09-02
 ---
 
 ## Mathematics

@@ -1,7 +1,6 @@
 ---
 title: Computer Methods
 tags: [algorithms, numerical-methods]
-date: 2025-09-02
 ---
 
 ## Computer Methods
