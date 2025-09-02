@@ -1,3 +1,9 @@
+---
+title: Structural Engineering
+tags: [structures, statics]
+date: 2025-09-02
+---
+
 ## Construction Engineering
 
 1. Moment - Tendency of a force to cause rotation about a point or axis

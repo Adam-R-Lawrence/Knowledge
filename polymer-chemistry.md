@@ -1,3 +1,9 @@
+---
+title: Polymer Chemistry
+tags: [polymers, photochemistry]
+date: 2025-09-02
+---
+
 ## Photopolymerization
 
 1. Polymers
