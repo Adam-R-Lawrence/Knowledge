@@ -27,3 +27,11 @@ date: YYYY-MM-DD
 2. Optionally add YAML front matter at the top.
 3. Structure content using `##`/`###` headings and lists.
 4. Commit the changes to the repository.
+
+## OneDrive Sync
+
+To sync only this `Knowledge` directory with OneDrive, run:
+
+```bash
+onedrive --synchronize --single-directory "Knowledge"
+```
