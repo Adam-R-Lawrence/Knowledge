@@ -15,6 +15,18 @@ Parallel programming structures computations to run simultaneously across cores,
 - Branch prediction: Anticipates control flow to keep pipelines busy; mispredictions flush work and waste cycles.
 - Data forwarding: Bypasses produced values directly to dependent stages, reducing read-after-write stalls.
 
+### OpenMP Essentials
+- Programming model: Shared-memory API that uses compiler directives (`#pragma omp`) to spawn threads and manage work sharing.
+- Master vs workers: The master thread executes serial regions and distributes parallel work; worker threads cooperate inside parallel regions.
+- `#pragma omp parallel`: Creates a team of threads to execute a block; use `num_threads` or environment variables to size the team.
+- `#pragma omp parallel for`: Combines team creation with loop work sharing; default scheduling is implementation-defined but often static.
+- Scheduling: `schedule(static)` assigns contiguous iteration chunks per thread, minimizing scheduling overhead; `schedule(dynamic)` hands out chunks at runtime to balance irregular workloads (extra overhead from coordination).
+- Data scoping:
+  - `private(var)`: Each thread gets an uninitialized private copy; updates do not affect the original variable.
+  - `firstprivate(var)`: Like `private`, but copies the initial value from the master thread into each thread's private copy.
+- Reductions: `reduction(op:var)` accumulates thread-local partials using `op` (add, multiply, max, etc.) and combines them at region end; operations must be associative and commutative—division is disallowed.
+- Loop-carried dependencies: Only parallelize loops when iterations are independent; use techniques like loop skewing, prefix sums, or privatization to break dependencies before adding `parallel for`.
+
 ### Memory Hierarchy & Locality
 - Cache: Small, fast memory that keeps recently used data to reduce average access latency.
 - Cache line: Minimum transfer unit between memory and cache (e.g., 64 bytes).
