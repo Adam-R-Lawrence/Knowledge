@@ -21,6 +21,14 @@ Parallel programming structures computations to run simultaneously across cores,
 - `#pragma omp parallel`: Creates a team of threads to execute a block; use `num_threads` or environment variables to size the team.
 - `#pragma omp parallel for`: Combines team creation with loop work sharing; default scheduling is implementation-defined but often static.
 - Scheduling: `schedule(static)` assigns contiguous iteration chunks per thread, minimizing scheduling overhead; `schedule(dynamic)` hands out chunks at runtime to balance irregular workloads (extra overhead from coordination).
+  - Examples:
+    ```c
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < n; ++i) { /* work */ }
+    
+    #pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < n; ++i) { /* irregular work */ }
+    ```
 - Data scoping:
   - `private(var)`: Each thread gets an uninitialized private copy; updates do not affect the original variable.
   - `firstprivate(var)`: Like `private`, but copies the initial value from the master thread into each thread's private copy.
@@ -45,6 +53,12 @@ Parallel programming structures computations to run simultaneously across cores,
 - Conflict miss: Limited associativity maps multiple blocks to the same set, causing avoidable misses.
 - Capacity miss: Working set exceeds cache size, causing misses even with optimal placement.
 
+### Cache Thrashing
+- Definition: Pathological sequence of accesses that repeatedly evicts and reloads cache lines, typically due to many active addresses mapping to the same set (conflict-driven). Results in very high miss rates and low effective cache reuse.
+- Not the same as a cache miss: A cache miss is a single event; thrashing is a behavior that causes excessive misses (most often conflict misses). Thrashing can also occur at TLB levels.
+- Triggers: Power-of-two strides, arrays whose leading dimensions align poorly with set mapping, or multiple threads hammering the same sets.
+- Mitigations: Change strides or loop order; apply padding/array realignment; use blocking/tiling; increase associativity (hardware) or use software techniques like index hashing; avoid false sharing across threads.
+
 ### Metrics & Operations
 - FLOPs: Floating-point operations per second; a common compute-throughput metric.
 - Load operations: Instructions that read memory into registers; may hit or miss in cache and dominate latency.
@@ -63,6 +77,11 @@ Parallel programming structures computations to run simultaneously across cores,
 - Intrinsics: Explicit control when the compiler struggles; balance readability vs performance.
 - Memory-bound limits: SIMD helps only if bandwidth/latency isn’t the bottleneck; consider blocking and prefetching.
 
+### Tiling (Blocking)
+- Definition: Reorder loops to operate on small subproblems (tiles) that fit into a target cache level to maximize data reuse before eviction.
+- Benefits: Reduces capacity/conflict misses, improves TLB locality, and exposes reuse for SIMD and multi-threading.
+- Multi-level: Nest tiles to target L1, then L2/L3; choose tile sizes so the working set per tile stays well below the cache size with headroom.
+- See also: “Arithmetic Intensity, Tiling, Unrolling, Prefetching” for additional guidance and heuristics.
 ### DVFS (Dynamic Voltage and Frequency Scaling)
 - Trade-off between performance, power, and thermals by adjusting per-core or global frequency/voltage.
 - Turbo/boost increases frequency opportunistically; thermal or power limits can throttle under sustained load.
