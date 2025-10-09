@@ -21,3 +21,13 @@ A quick list of everyday words to memorize.
 - 练习 (lian4 xi2) - to practice
 - 旅游 (lv3 you2) - to travel
 - 解决 (jie3 jue2) - to solve
+- 比赛 (bi3 sai4) - competition; match
+- 迟到 (chi2 dao4) - to arrive late
+- 复习 (fu4 xi2) - to review; revise
+- 饮料 (yin3 liao4) - beverage
+- 打扫 (da3 sao3) - to clean; sweep
+- 照顾 (zhao4 gu4) - to take care of
+- 会议 (hui4 yi4) - meeting; conference
+- 选择 (xuan3 ze2) - to choose; select
+- 舒服 (shu1 fu) - comfortable
+- 害怕 (hai4 pa4) - to be afraid; scared
