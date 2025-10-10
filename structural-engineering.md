@@ -56,6 +56,23 @@ tags: [structures, statics]
 - Bending: Curvature due to internal moments; tension on one side, compression on the other.
 - Buckling: Sudden lateral instability of compression members above a critical load.
 
+### Principle of Superposition
+- Statement: For linear elastic structures, the total response to multiple loads equals the sum of responses to each load applied separately.
+- Requirements: Material behavior, geometry, and boundary conditions must remain linear; large deflections or yielding break superposition.
+- Uses: Solve complex load cases by decomposing them into simpler components, combine mode shapes in structural dynamics, and assemble influence-line responses from unit-load solutions.
+
+### Influence Lines
+- Definition: Graphs showing how a response quantity (reaction, shear, moment, deflection) at a specific point varies as a unit load traverses the structure.
+- Construction: Use Müller–Breslau principle—remove the restraint associated with the response, impose a unit displacement in the positive response direction, and the resulting deflected shape (scaled) is the influence line.
+- Applications: Evaluate worst-case positions for moving loads (bridges, cranes), compute envelopes by integrating distributed loads over the influence line, and identify critical panels needing reinforcement.
+
+### Moment-Area Method
+- Idea: Relates changes in slope and deflection between two points on a beam to the area under the bending moment diagram divided by flexural rigidity `EI`.
+- Theorems:
+  1. Change in slope between two points equals the area under `M/EI` between them.
+  2. Deflection at a point relative to a tangent drawn at another point equals the first moment (about the point) of the `M/EI` area between them.
+- Usage: Efficient for prismatic beams with piecewise constant loads; combine with superposition to handle complex load cases without solving full differential equations.
+
 ### Determinacy & Stability
 
 - Determinacy:

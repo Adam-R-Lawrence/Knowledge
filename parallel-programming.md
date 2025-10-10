@@ -32,8 +32,32 @@ Parallel programming structures computations to run simultaneously across cores,
 - Data scoping:
   - `private(var)`: Each thread gets an uninitialized private copy; updates do not affect the original variable.
   - `firstprivate(var)`: Like `private`, but copies the initial value from the master thread into each thread's private copy.
+  - `shared(var)`: Declares variables visible (and potentially contend) across all threads; use sparingly because writes require synchronization.
+  - `lastprivate(var)`: Copies the value from the lexicographically last iteration (per sequential order) back to the original variable after the parallel loop.
 - Reductions: `reduction(op:var)` accumulates thread-local partials using `op` (add, multiply, max, etc.) and combines them at region end; operations must be associative and commutative—division is disallowed.
+  - Example: `#pragma omp parallel for reduction(min:best)` keeps the minimum value across iterations; initialize `best` to a sentinel larger than any candidate.
 - Loop-carried dependencies: Only parallelize loops when iterations are independent; use techniques like loop skewing, prefix sums, or privatization to break dependencies before adding `parallel for`.
+
+### OpenMP Tasking & Clauses
+- `#pragma omp task`: Defers execution of a block to be run by any thread in the current team; tasks capture shared/private data environment just like parallel regions.
+- `#pragma omp taskwait`: Synchronizes the generating task with all outstanding child tasks, ensuring dependents finish before continuing.
+- `priority(n)`: Optional clause hinting to the runtime which tasks should be scheduled first; higher `n` usually executes earlier but is advisory.
+- `collapse(n)`: Applies to nested loops; flattens the first `n` loops into a single iteration space so the runtime sees more iterations to distribute evenly.
+- `private(list)`: Explicit data-sharing clause; declare scalars or temporaries `private` when each thread must have its own instance instead of sharing and racing on a single variable.
+- Padding: Add unused array slots or structure members so thread-private data lands on different cache lines, reducing false sharing in OpenMP worksharing loops.
+
+### OpenMP Directive Cheatsheet
+- `#pragma omp parallel`: Spawns a team of threads to execute a structured block once per thread; combine with clauses like `default(shared)` or `num_threads(n)`.
+- `#pragma omp parallel for`: Creates a team and distributes loop iterations automatically; default scheduling follows implementation but can be overridden with `schedule`.
+- `#pragma omp critical`: Serializes entry to the enclosed block so only one thread executes it at a time; keep regions small to limit contention.
+- `#pragma omp atomic`: Provides low-overhead, atomic read-modify-write for simple updates (add, min, max); use instead of `critical` when updating a single scalar.
+- `#pragma omp barrier`: All threads in the current team pause until everyone arrives; use to enforce phase ordering within a parallel region.
+- `#pragma omp single`: Executes the enclosed block on just one thread (not necessarily the master) while others skip ahead; pair with `nowait` to avoid the implicit barrier if safe.
+
+### OpenMP Runtime Library
+- `omp_get_thread_num()`: Returns the calling thread’s ID (0-based) within the current team; valid inside parallel regions.
+- `omp_get_num_threads()`: Reports the number of threads in the current team; returns 1 when executed outside a parallel region.
+- `omp_get_max_threads()`: (related) Gives the size of the team that would be created by the next `parallel` region, honoring environment settings and `omp_set_num_threads`.
 
 ### Memory Hierarchy & Locality
 - Cache: Small, fast memory that keeps recently used data to reduce average access latency.
@@ -58,6 +82,21 @@ Parallel programming structures computations to run simultaneously across cores,
 - Not the same as a cache miss: A cache miss is a single event; thrashing is a behavior that causes excessive misses (most often conflict misses). Thrashing can also occur at TLB levels.
 - Triggers: Power-of-two strides, arrays whose leading dimensions align poorly with set mapping, or multiple threads hammering the same sets.
 - Mitigations: Change strides or loop order; apply padding/array realignment; use blocking/tiling; increase associativity (hardware) or use software techniques like index hashing; avoid false sharing across threads.
+
+### Cache Coherence Traffic
+- Definition: Volume of cache-line transfers triggered by the coherence protocol to keep shared data consistent across cores, often measured as invalidations or snoop messages.
+- Cost: Excess traffic inflates memory latency, burns bandwidth on interconnects, and can serialize updates—especially for fine-grained sharing or ping-ponging.
+- Reduction: Favor thread-local data, apply privatization or reductions, align write-heavy data so each thread updates disjoint cache lines, and batch communication into coarser phases.
+
+### MESI Protocol
+- States: Modified, Exclusive, Shared, Invalid—each cache line lives in one state per core, dictating read/write permissions and coherence actions.
+- Transitions: Writes promote lines to Modified (invalidating others), reads move Invalid → Shared/Exclusive depending on sharers, and evictions of Modified lines trigger write-back to memory.
+- Performance: MESI keeps single-owner writes fast but punishes ping-pong patterns; minimize shared-line bouncing via data partitioning and avoiding false sharing.
+
+### False Sharing
+- Problem: Independent thread-local variables mapped to the same cache line cause coherence invalidations with every write, tanking performance despite no true data dependency.
+- Detection: Look for strided accesses to structs/arrays of small scalars in profiling tools (`perf stat`, Intel VTune false-sharing analysis).
+- Fixes: Add cache-line padding between per-thread data, restructure arrays-of-structs into struct-of-arrays, or use OpenMP `aligned`/`declare simd` clauses with attentiveness to layout.
 
 ### Metrics & Operations
 - FLOPs: Floating-point operations per second; a common compute-throughput metric.
@@ -156,3 +195,27 @@ Parallel programming structures computations to run simultaneously across cores,
 - Software: Insert explicit prefetch hints (e.g., `_mm_prefetch`) with a distance ≈ memory_latency / cycles_per_iteration; use non-temporal hints for one-time streams.
 - Pitfalls: Over-prefetching can pollute caches or waste bandwidth; tune distances and target levels (L1/L2) with profiling.
 - Complementary: Combine with tiling and layout changes to make access patterns more predictable for both hardware and software prefetchers.
+
+### Minimize Communication, Maximize Locality
+- Principle: Every data transfer across threads, sockets, or nodes has overhead; restructure algorithms to reuse data where it already resides before sending it elsewhere.
+- Techniques: Partition domains so each thread works on spatially contiguous blocks, replicate read-only parameters instead of sharing write-heavy state, and overlap communication with computation when movement is unavoidable.
+- Diagnostics: Track bytes transferred per FLOP and MPI/OpenMP bandwidth metrics; rising ratios often signal that communication, not compute, is the bottleneck.
+
+### Loop Parallelization Heuristics
+- Prefer parallelizing the outermost loops so each thread processes large, contiguous chunks—this improves locality and reduces synchronization relative to inner-loop parallelism.
+- Ensure vectorization on the innermost loop, then expose thread-level parallelism one level up; balance grain size so each chunk amortizes scheduling cost yet leaves enough work for all threads.
+- Use OpenMP `collapse(n)` to expose more iterations when outer loops are too small, and pair it with `schedule(dynamic, chunk)` carefully to avoid fragmenting cache-resident tiles.
+
+### Pipeline Algorithm
+- Pattern: Break a computation into ordered stages, each handled by a different thread or hardware unit; data items stream through the stages like an assembly line.
+- Benefit: Overlaps work on different items, hiding per-stage latency and raising throughput once the pipeline fills.
+- Caveats: Throughput is limited by the slowest stage; balance workloads or replicate bottleneck stages, and add buffering/queues to absorb burstiness without blocking upstream stages.
+
+### Diagonal (Wavefront) Algorithm
+- Description: Traverse dependence graphs along diagonals (wavefronts) so computations with satisfied dependencies execute in parallel, common in dynamic programming and stencil updates.
+- Implementation: Process anti-diagonals of a matrix or time-space grid; points on the same wavefront are independent, while successive wavefronts provide natural synchronization boundaries.
+- Benefit: Avoids fine-grained locks by aligning work with dependency cones and often improves cache locality compared to naive row/column ordering.
+
+### Saturating Pipelines
+- Goal: Keep hardware execution units busy by providing enough independent work to cover pipeline latency; avoid bubbles from stalls or imbalanced instruction issue.
+- Tactics: Unroll loops, interleave independent operations, and schedule memory accesses early so data is ready when needed. Pair with software pipelining or out-of-order-friendly instruction mixes to feed all stages continuously.
