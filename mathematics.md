@@ -27,6 +27,12 @@ Brief notes on mathematical concepts, definitions, and problem-solving.
 - Dimension is the nullity; fundamental for solvability (`b` must be orthogonal to the left null space) and conditioning.
 - In PDE contexts, null spaces often encode symmetries (e.g., rigid body modes, gauge freedoms).
 
+### Tensor
+- Multi-linear map that transforms predictably under coordinate changes; orders correspond to the number of covariant/contravariant indices.
+- Provides coordinate-free descriptions of physical quantities (stress, strain, inertia) so results remain objective regardless of basis.
+- In ℝⁿ, tensors can be represented by arrays whose components obey transformation rules `T' = Q T Q^T` (second order) when rotating coordinates.
+- Tensor operations—contraction, outer product, tensor product—extend familiar vector/matrix algebra to higher-order objects.
+
 ### Gauge Invariance
 - Redundancy in field variables where physically measurable quantities stay unchanged under local transformations.
 - Electromagnetism: potentials obey `A → A + ∇χ`, `φ → φ - ∂_t χ`, leaving `E` and `B` intact; similar ideas appear in fluid pressure, vector potentials, and Yang–Mills theories.
@@ -36,6 +42,12 @@ Brief notes on mathematical concepts, definitions, and problem-solving.
 - For matrix `A` and vector `r0`, the order-`m` subspace `K_m(A, r0) = span{r0, A r0, ..., A^{m-1} r0}`.
 - Iterative methods (GMRES, CG, BiCGStab) search for solutions within growing Krylov subspaces while keeping residuals small.
 - Orthogonalization and preconditioning determine numerical stability and convergence speed.
+
+### Condition Number
+- Measures sensitivity of a problem to perturbations: `κ(A) = ||A|| · ||A^{-1}||`, equal to the ratio of largest to smallest singular value in 2-norm.
+- Large `κ` implies small input or coefficient errors can cause large solution changes; ill-conditioned systems challenge numerical solvers.
+- Preconditioning aims to reduce `κ` to improve convergence of iterative methods and stability of direct factorizations.
+- Also used for nonlinear problems via Jacobians: monitor `κ(J)` to detect near-singular configurations or bifurcations.
 
 ### Dual Space `V'`
 - All continuous linear functionals on a normed space `V`, with norm `||f|| = sup_{||v||=1} |f(v)|`.

@@ -37,23 +37,30 @@ tags: [structures, statics]
   - Beam: Member primarily resisting bending from transverse loads; typically horizontal.
   - Column: Compression member primarily resisting axial load; buckling governs slender members.
   - Cantilever: Member fixed at one end and free at the other.
+  - Prismatic element: Member with constant cross-sectional shape and material properties along its length; simplifies analysis because stiffness distributions stay uniform.
 
 ### Material & Section Behavior
 
 - Material and section behavior:
-  - Stress: Internal force per area; normal component due to axial/bending actions.
+  - Stress: Internal force per area; normal component arises from axial and bending actions.
   - Axial force: Internal force acting along the member's axis; tension positive and compression negative by sign convention.
   - Tension: Axial action causing elongation; induces tensile normal stress.
   - Compression: Axial action causing shortening; may trigger buckling in slender members.
   - Shear stress: Tangential stress from transverse shear or torsion; drives sliding along planes.
   - Torsion: Twisting due to applied torque; produces shear stress over the cross-section.
-  - Young's modulus: Material stiffness parameter E; slope of elastic stress–strain.
+  - Young's modulus: Material stiffness parameter `E`; slope of the linear elastic stress–strain curve in tension/compression.
   - Stiffness: Structural resistance to deformation (k = load/deflection); depends on E and geometry.
   - Strength: Capacity before failure (yield/ultimate limits); governs allowable stress/load.
+
+### Section Properties
+
+- Second moment of area: Geometric property `I = ∫ y^2 dA` about a chosen axis; quantifies how area is distributed relative to that axis and governs bending stiffness.
+- Flexural rigidity: Product `EI` combining material stiffness and section geometry; appears in beam deflection formulas and the moment-curvature relation `M = EI κ`.
 
 ### Structural Response
 
 - Bending: Curvature due to internal moments; tension on one side, compression on the other.
+- Bending moment: Internal couple induced by transverse loads; varies along the member and produces normal stresses via `σ = M y / I`.
 - Buckling: Sudden lateral instability of compression members above a critical load.
 
 ### Principle of Superposition

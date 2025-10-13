@@ -29,6 +29,7 @@ Parallel programming structures computations to run simultaneously across cores,
 - Programming model: Shared-memory API that uses compiler directives (`#pragma omp`) to spawn threads and manage work sharing.
 - Master vs workers: The master thread executes serial regions and distributes parallel work; worker threads cooperate inside parallel regions.
 - Master thread: Thread 0 in an OpenMP team; handles serial regions before and after parallel constructs and executes `single` regions when `omp_get_thread_num() == 0`.
+- `#pragma omp master`: Restricts a structured block to the master thread while worker threads skip it without synchronization; add an explicit `#pragma omp barrier` afterward if they must rendezvous before continuing.
 - `#pragma omp parallel`: Creates a team of threads to execute a block; use `num_threads` or environment variables to size the team.
 - `#pragma omp parallel for`: Combines team creation with loop work sharing; default scheduling is implementation-defined but often static.
 - Scheduling:
