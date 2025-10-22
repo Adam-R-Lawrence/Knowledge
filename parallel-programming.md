@@ -103,6 +103,25 @@ Parallel programming structures computations to run simultaneously across cores,
 - Pthreads: POSIX threads API (`pthread_create`, `pthread_join`, locks, condition variables); foundation for many C/C++ parallel runtimes including OpenMP implementations.
 - Implicit vs explicit threading: OpenMP hides thread creation behind directives, whereas pthreads requires manual lifecycle management—pick the level matching your control needs.
 
+### MPI Basics
+- MPI rank: Unique integer identifier assigned to each process within a communicator; drives data partitioning and determines which workload slice a process owns.
+- Address space: The private memory owned by a rank; one-sided MPI operations expose selected regions via windows so peers can access them without attaching to the host process's call stack.
+- Oversubscription: Running more software threads or MPI ranks than available hardware execution contexts; increases latency and cache contention, so use only when hiding I/O stalls or testing scalability on limited hardware.
+
+### MPI Synchronization & Collectives
+- `MPI_Barrier`: Blocking collective that forces all ranks in a communicator to wait until everyone arrives; helpful for phase transitions or timing sections but avoid overuse because it serializes progress.
+- `MPI_Allreduce`: Combines values from all ranks with an associative operation (sum, max, logical and, etc.) and broadcasts the result to everyone; essential for global norms, dot products, and convergence checks.
+
+### MPI Remote Memory Access (RMA)
+- `MPI_Get`: One-sided read that fetches data from a target rank's exposed window without involving the target CPU in the critical path; complete the access with matching fence or lock/unlock calls to ensure ordering.
+- `MPI_Put`: One-sided write pushing data into a target window; enables overlap by letting the origin rank continue once the transfer is initiated, subject to subsequent synchronization.
+- `MPI_Accumulate`: Atomic read-modify-write on a remote window using a specified operation (e.g., sum, max); ideal for distributed counters or assembling halo contributions without explicit receive loops.
+
+### MPI Thread Support Levels
+- `MPI_THREAD_SINGLE`: Only one thread exists in the process; simplest level with minimal internal locking overhead.
+- `MPI_THREAD_SERIALIZED`: Multiple application threads may exist, but at most one may make MPI calls at a time; enforce with external mutexes or thread funnels.
+- `MPI_THREAD_MULTIPLE`: Fully concurrent MPI calls from multiple threads are permitted; offers maximal flexibility but depends on the implementation's locking granularity for performance.
+
 ### Memory Hierarchy & Locality
 - Cache: Small, fast memory that keeps recently used data to reduce average access latency.
 - Cache line: Minimum transfer unit between memory and cache (e.g., 64 bytes).
