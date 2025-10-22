@@ -18,14 +18,43 @@ Brief notes on computational techniques, algorithms, and numerical methods.
 - Jacobi (diagonal) preconditioner: `M = diag(A)`; inexpensive and parallel-friendly; effective when row scaling dominates.
 - Incomplete LU (ILU): Factorization `A ≈ L\,U` with restricted fill; stronger than Jacobi but more setup cost; common variants ILU(0), ILU(k), ILUT.
 
+### Conjugate Gradient Method
+- Scope: Iterative solver for symmetric positive definite (SPD) systems that minimizes the `A`-norm of the error over growing Krylov subspaces.
+- Mechanism: Builds mutually `A`-orthogonal search directions using residuals and scalar recurrence coefficients, requiring only matrix-vector products and vector dot products per iteration.
+- Practical tips: Preconditioning preserves SPD when the preconditioner is SPD, and finite precision can break orthogonality—restart or reorthogonalize if convergence stalls.
+
 ### Gauss–Seidel Iteration
 - Scheme: Splits `A = L + D + U` (lower, diagonal, upper); updates solution components sequentially using freshest values: `x_i^{k+1} = (b_i - Σ_{j<i} a_{ij} x_j^{k+1} - Σ_{j>i} a_{ij} x_j^k) / a_{ii}`.
 - Convergence: Guaranteed for strictly diagonally dominant or symmetric positive definite matrices; otherwise depends on spectral radius of the iteration matrix.
 - Usage: Simple to implement, good smoother for multigrid; sequential data dependence limits parallelism but red-black ordering or block variants unlock concurrency.
 
+### Inexact Newton Method
+- Idea: Relax the accuracy of the linearized Jacobian solve at each Newton step, solving `J δ = -F` only to a tolerance that tightens as the nonlinear residual shrinks.
+- Benefit: Saves work early in the iteration when the search direction is rough, while still recovering quadratic convergence near the solution as tolerances tighten.
+- Implementation: Choose forcing terms (e.g., Eisenstat–Walker criteria) to adapt the inner-solve tolerance automatically rather than hard-coding iteration counts.
+
+### Line Search Newton Method
+- Goal: Globalize Newton's method by backing off the full step length when the residual or merit function fails to decrease.
+- Mechanics: Compute the Newton direction, then use backtracking or Wolfe-condition line search to find `α` such that `x_{k+1} = x_k + α δ` satisfies descent criteria.
+- Use cases: Stabilizes nonlinear solves with poor initial guesses or highly nonlinear regions; pair with trust-region strategies when line search fails repeatedly.
+
+### Implicit vs Explicit Linear Solvers
+- Explicit solver: Updates unknowns via direct formulas (e.g., forward Euler, Jacobi) that use only previously computed values—cheap per step but bound by stability limits on time step or relaxation factors.
+- Implicit solver: Solves a coupled system (often via factorization or iterative methods) that includes the unknown at the new state—more robust for stiff problems but demands linear solves each step.
+- Trade-off: Explicit schemes favor low-cost, easily parallelizable iterations, whereas implicit schemes permit larger steps and unconditional stability at the expense of solving larger algebraic systems.
+
 ### Finite Element Meshes
 - Non-conforming mesh: Adjacent elements do not share a node-to-node correspondence along their common interface (e.g., mismatched element sizes or polynomial orders); continuity is enforced with constraint equations, multipoint constraints, or mortar methods.
 - Hanging node: Node that lies on the edge or face of a neighboring element without being a vertex of that element; typical in adaptive mesh refinement and requires constraint handling to maintain field continuity.
+
+### Mesh Adaptivity Strategies
+- h-method refinement: Halving characteristic element size (`h → h/2`) multiplies element count by ≈4 in 2D surfaces or ≈8 in 3D volumes, boosting resolution at the cost of denser matrices.
+- Node balancing: Redistribute elements or adjust partition weights so each processor receives comparable node counts, preventing load imbalance after local refinement or derefinement.
+- Edge swapping: Replace diagonal connections in quadrilaterals or tetrahedra to improve element quality metrics (aspect ratio, minimum angle) without changing mesh density.
+- Coarsening approaches:
+  - Derefinement as inverse refinement: Collapse previously refined elements back to their parents using stored refinement trees to maintain conformity.
+  - Arbitrary derefinement: Remove elements based on error indicators even without a refinement history, reconstructing surrounding connectivity on the fly.
+- R-method: Relocate mesh nodes toward regions of large solution gradients while keeping element connectivity fixed, clustering resolution where physics demand it.
 
 ### Consistency (Numerical PDE Theory)
 - Definition: A discrete operator is consistent if its truncation error vanishes as the mesh is refined; discrete equations converge to the continuous PDE.

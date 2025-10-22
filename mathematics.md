@@ -74,6 +74,11 @@ Brief notes on mathematical concepts, definitions, and problem-solving.
 - Captures curvature; positive definite Hessian at a critical point implies a strict local minimum for smooth `f`.
 - Used in Newton updates, stability analysis, and second-order optimization methods.
 
+### Implicit Function
+- Relationship defined indirectly by an equation `F(x, y) = 0` instead of explicit `y = f(x)` form; solutions lie on the level set of `F`.
+- Implicit function theorem: If `∂F/∂y` is nonzero near a point, one can locally solve for `y(x)` with derivatives obtained via implicit differentiation.
+- Applications: Constraining optimization problems, tracking phase equilibria, or defining manifolds without closed-form parameterizations.
+
 ### Interpolation
 - Builds a function that matches known samples and estimates values between them.
 - Polynomial, spline, and radial basis interpolants trade smoothness, accuracy, and conditioning.
