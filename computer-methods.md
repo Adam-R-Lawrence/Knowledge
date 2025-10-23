@@ -61,6 +61,15 @@ Brief notes on computational techniques, algorithms, and numerical methods.
 - Role: Together with stability, consistency implies convergence via the Lax equivalence theorem for linear problems.
 - Practice: Derive leading truncation terms to guide mesh refinement or stabilization; ensure boundary conditions are discretized with matching order to avoid dominating the global error.
 
+### Variational and Weak Formulations
+- Well-posed PDE: Requires existence of a solution, uniqueness, and continuous dependence on data; check via Lax–Milgram or Babuska–Nečas theorems before discretization.
+- Variational principle: Rewrite the governing PDE as a stationary point of an energy or action functional, enabling integral formulations and highlighting conservation laws.
+- Weighted residual method: Multiply the strong-form residual by admissible test functions and integrate over the domain so that projection of the residual onto the test space vanishes.
+- Galerkin form: Choose test functions from the same space as the trial functions, yielding symmetric systems for self-adjoint problems and ensuring optimality in the energy norm.
+- Continuous weak form: Integrate by parts to lower derivative order, impose boundary conditions weakly, and pose the problem on infinite-dimensional trial/test spaces.
+- Discretized weak form: Restrict trial and test spaces to finite-dimensional bases (e.g., finite elements) to obtain algebraic systems suitable for numerical solution.
+- Tikhonov regularization: Add a weighted penalty (e.g., `α ||L u||^2`) to the variational functional to stabilize ill-posed or noisy problems and control solution smoothness.
+
 ### Stabilized FEM (SUPG, mPSPG, RBVMS)
 - SUPG (Streamline Upwind/Petrov–Galerkin): Adds directional diffusion along the flow to control oscillations in advection-dominated problems while preserving sharp fronts.
 - mPSPG (modified Pressure-Stabilizing/Petrov–Galerkin): Provides pressure stabilization for equal-order velocity/pressure spaces in incompressible flow by penalizing the residual of continuity; the “modified” form adjusts weighting for improved near-wall accuracy.
