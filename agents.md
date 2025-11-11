@@ -20,3 +20,6 @@ Guidance for how this assistant should report edits made to the knowledge base.
 - When a requested addition already exists, do not add a duplicate; instead, flag it in the response immediately.
 - Quote the original stored definition with its location so the user can confirm the existing entry.
 - Proceed to add only the genuinely new items, reporting their locations and verbatim text as usual.
+
+### Placement Flexibility
+- When the user supplies a list of items, there is no restriction that they must all live in the same file; choose the most appropriate destination for each entry.

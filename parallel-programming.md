@@ -13,6 +13,18 @@ Parallel programming structures computations to run simultaneously across cores,
 - Encore Multimax: Early shared-memory multiprocessor (mid-1980s) with snoopy caches; a reminder that topology, cache coherence, and scheduling policies matter as much as raw core count.
 - Execution semantics: Formal meaning of a parallel program—the orderings guaranteed (or allowed) by the memory model and runtime; reason about them to avoid relying on undefined interleavings.
 
+### Memory Technologies
+- Nonvolatile memory (NVM): Storage-class memory (e.g., 3D XPoint, MRAM) that keeps data without power while offering near-DRAM access granularity; lets HPC codes place checkpoint logs or key-value stores directly in persistent address space, but beware asymmetric write latency and limited endurance.
+
+### Communication Performance Models
+- Latency–bandwidth model: Predicts message time as `T = α + β · n`, where `α` is startup latency and `β` is the inverse bandwidth per byte; guides when to aggregate messages, overlap communication with computation, or switch to pipelined collectives.
+- LogP model: Characterizes distributed systems with latency `L`, per-message overhead `o`, minimum gap `g` between sends, and processor count `P`, reminding us that endpoints stay busy during `o` and that injected messages are throttled by `g`.
+- Network contention: Simultaneous traffic on shared links inflates apparent `β`/`g`; topology-aware rank mapping, throttled collectives, and adaptive routing keep hotspots from stalling large jobs.
+
+### Message Transport Techniques
+- Packetization: Large payloads are sliced into packets or chunks sized for the NIC and switch fabric; tuning packet size balances header overhead, serialization delay, and the ability to interleave messages from different ranks.
+- Quiescent state: A point where all in-flight packets complete and no new operations are issued; required before shutting down communicators, checking global progress guarantees, or committing passive-target RMA epochs.
+
 ### Instruction-Level Parallelism (CPU Execution)
 - Pipelining: Overlaps instruction stages to increase throughput without raising clock speed.
 - Branch prediction: Anticipates control flow to keep pipelines busy; mispredictions flush work and waste cycles.
@@ -116,6 +128,10 @@ Parallel programming structures computations to run simultaneously across cores,
 - `MPI_Get`: One-sided read that fetches data from a target rank's exposed window without involving the target CPU in the critical path; complete the access with matching fence or lock/unlock calls to ensure ordering.
 - `MPI_Put`: One-sided write pushing data into a target window; enables overlap by letting the origin rank continue once the transfer is initiated, subject to subsequent synchronization.
 - `MPI_Accumulate`: Atomic read-modify-write on a remote window using a specified operation (e.g., sum, max); ideal for distributed counters or assembling halo contributions without explicit receive loops.
+- RMA epoch: The synchronization interval (created by `MPI_Win_fence`, lock/unlock, or post/start/complete/wait) during which one-sided operations are valid; all origins must enter and exit epochs consistently so data hazards are scoped and ordering is defined.
+
+### One-Sided vs Two-Sided Messaging
+- `MPI_Put/Get` vs `MPI_Send/Recv`: One-sided operations decouple the origin and target call sites—origins issue puts/gets once a window is exposed, while two-sided messaging requires both endpoints to call matching send/recv; choose RMA to improve overlap or avoid polling progress engines, but fall back to two-sided when you need built-in matching, fairness, or simpler ordering semantics.
 
 ### MPI Thread Support Levels
 - `MPI_THREAD_SINGLE`: Only one thread exists in the process; simplest level with minimal internal locking overhead.
@@ -199,6 +215,10 @@ Parallel programming structures computations to run simultaneously across cores,
 - Word size: Fundamental data unit; single precision uses 32-bit (4-byte) words, double precision uses 64-bit (8-byte) words—affects cache footprint, bandwidth, and SIMD lane occupancy.
 - Throughput: Amount of useful work completed per unit time; improve by balancing compute, memory, and synchronization so no stage starves the others.
 - Ceiling function: Smallest integer ≥ `x`; handy for partitioning work evenly across threads (`ceil(n / p)` gives at-most-one-element imbalance).
+
+### Parallel Histogramming
+- Build local histograms per thread or rank to avoid contention, then combine via reductions; bin privatization keeps updates cache-local and turns atomics into bulk additions.
+- For massive key ranges, use multi-pass approaches (e.g., radix-style chunking) so each pass touches a cache-resident subset, minimizing random memory traffic and synchronization.
 
 ### Logic & Bitwise Ops
 - Bitwise AND/OR/XOR: Operate on individual bits of integers; crucial for masks, SIMD lane control, and lock-free data structures.
