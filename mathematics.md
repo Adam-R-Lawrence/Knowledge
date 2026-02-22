@@ -218,6 +218,15 @@ Brief notes on mathematical concepts, definitions, and problem-solving.
 - Family of second-order, unconditionally stable time integrators that add controllable high-frequency damping for ODEs/structural dynamics.
 - Parameters via spectral radius at infinity `ρ∞ ∈ [0,1]` (0 = max damping, 1 = no extra damping):
   `α_m = (2 ρ∞ - 1)/(ρ∞ + 1)`, `α_f = ρ∞/(ρ∞ + 1)`, `γ = 1/2 + α_f - α_m`, `β = (1/4) (1 + α_f - α_m)^2`.
+
+### Affine Space
+- A geometric set that looks like a vector space with the origin forgotten; points can be subtracted to get vectors, and a point plus a vector gives another point.
+
+### Bethe Lattice
+- An infinite, cycle-free regular graph (each node has fixed coordination number) used in statistical mechanics as a tree-like mean-field model.
+
+### Bifurcation (PDE theory)
+- A parameter-driven qualitative change in the solution set of a PDE, such as symmetry breaking, branch creation, or stability exchange at critical values.
 - Use: Choose `ρ∞ ≈ 0.5–0.8` to damp spurious high-frequency response while keeping low-frequency accuracy.
 
 ### Lp Norms (ℓ2, ℓ∞)

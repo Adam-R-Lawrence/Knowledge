@@ -38,3 +38,12 @@ Notes on turbulent flow scales and modeling concepts.
 
 ### Chaotic Statistical Predictability
 - Chaotic systems (turbulence, Lorenz models) lose pointwise predictability quickly, yet their statistical quantities—means, spectra, Reynolds stresses—vary slowly, enabling useful forecasts and closure modeling even when trajectories diverge exponentially.
+
+### Near Wall Model
+- A turbulence-closure treatment for the viscous sublayer and buffer region near solid boundaries, typically using wall functions or low-Re corrections to recover realistic shear stress and velocity profiles.
+
+### RANS (Reynolds Averaged navier Stokes)
+- Reynolds-averaged Navier–Stokes equations govern mean-flow evolution after decomposing fluctuations, requiring turbulence models (e.g., `k-ε`, `k-ω`, Reynolds-stress models) to close the Reynolds-stress terms.
+
+### Entropic Resistance
+- Effective flow resistance associated with entropy production and geometric confinement, where constrictions or microstructure reduce accessible configurations and increase dissipation for transport.
