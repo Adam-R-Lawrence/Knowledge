@@ -16,12 +16,14 @@ tags: [mechanics, materials]
 ### Boundary Geometry
 
 - Unit outward normal vector `n`: A unit-length vector perpendicular to the boundary surface pointing outward from the domain; used to define tractions `t = σ · n`, impose Neumann/flux conditions, and orient surface integrals in divergence theorem applications.
+- Affine BC: An affine boundary condition where prescribed data vary as a linear function plus constant offset (e.g., displacement `u(x) = A x + b` on a boundary segment).
 
 ### Elastic Behavior
 
 - Linear elasticity: Regime where stress is proportional to strain and deformations are fully recoverable after unloading.
 - Hookean material: Ideal linear elastic solid obeying Hooke's law (`sigma = E * epsilon`) within its elastic limit.
 - Non-Hookean material: Exhibits nonlinear stress-strain response such as plasticity, hyperelasticity, or viscoelasticity; tangent or secant moduli depend on load level and history.
+- Neo-Hookean Model: A hyperelastic constitutive model for large strains where strain energy depends on invariants of deformation (often `W = C1 (I1 - 3)` for incompressible response, with volumetric terms for compressible solids).
 
 ### Energy Concepts
 
