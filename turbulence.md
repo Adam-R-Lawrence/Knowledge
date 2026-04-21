@@ -47,3 +47,12 @@ Notes on turbulent flow scales and modeling concepts.
 
 ### Entropic Resistance
 - Effective flow resistance associated with entropy production and geometric confinement, where constrictions or microstructure reduce accessible configurations and increase dissipation for transport.
+
+### Reynolds Number Similarity
+- Flows with matched Reynolds number `Re = UL/ν` exhibit dynamically similar inertia-to-viscosity balance, enabling model testing and scaling between geometrically similar systems when other controlling nondimensional groups are also matched.
+
+### Isotropic Turbulence
+- Idealized turbulence whose statistics are direction-independent (no preferred orientation), commonly used for theory, DNS benchmarks, and closure-model calibration away from boundaries.
+
+### Homogenous Turbulence
+- Turbulence with spatially uniform statistics (invariant under translation), so moments such as turbulent kinetic energy and Reynolds stresses do not vary with position over the region considered.
