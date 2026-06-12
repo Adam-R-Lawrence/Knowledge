@@ -52,6 +52,7 @@ Parallel programming structures computations to run simultaneously across cores,
   - `schedule(runtime)`: Defer choice to `OMP_SCHEDULE` at execution time—handy for tuning without recompiling.
   - `schedule(auto)`: Let the compiler/runtime pick based on heuristics; check generated code to ensure the choice matches expectations.
   - Guided schedule with chunk: Combine both to cap the minimum chunk size, e.g., `schedule(guided, 32)` to avoid hyper-fragmented tail work.
+- OpenMP data sharing: Rules that determine whether variables in a region are shared, private, or firstprivate based on storage duration, scoping clauses, and `default` settings.
 - Data scoping:
   - `private(var)`: Each thread gets an uninitialized private copy; updates do not affect the original variable.
   - `firstprivate(var)`: Like `private`, but copies the initial value from the master thread into each thread's private copy.
@@ -64,6 +65,10 @@ Parallel programming structures computations to run simultaneously across cores,
 - Implicit synchronization: Parallel regions and `parallel for` include an implicit barrier at the end; add `nowait` when safe to skip it and avoid idle threads.
 - `default(none)`: Forces explicit data-sharing clauses on every variable, preventing accidental sharing and catching bugs at compile time.
 - `default(private)`: Gives each thread a private copy by default; useful when most variables should be thread-local, but requires explicit `shared` for coordinated data.
+
+### OpenMP Correctness
+- Thread safety: Property that concurrent OpenMP threads access shared state with proper synchronization (e.g., locks, atomics, reductions) so invariants hold regardless of scheduling.
+- Race condition: Two or more threads access shared data without synchronization and at least one write occurs, producing nondeterministic or incorrect results; eliminate with privatization, atomics, or critical sections.
 
 ### OpenMP Tasking & Clauses
 - `#pragma omp task`: Defers execution of a block to be run by any thread in the current team; tasks capture shared/private data environment just like parallel regions.
@@ -116,15 +121,37 @@ Parallel programming structures computations to run simultaneously across cores,
 - Implicit vs explicit threading: OpenMP hides thread creation behind directives, whereas pthreads requires manual lifecycle management—pick the level matching your control needs.
 
 ### MPI Basics
+- MPI: Portable message-passing standard for distributed-memory programs; defines communicators, ranks, and routines for point-to-point and collective communication.
+- MPI communicator: Group of ranks plus communication context; isolates messages so identical tags and sources do not cross communicator boundaries.
+- MPI collectives: Operations involving all processes in a communicator (e.g., barriers, broadcasts, reductions) with implicit coordination.
+- MPI point-to-point: Direct messaging between a sending rank and receiving rank using matching tags and communicators; builds higher-level collectives and protocols.
 - MPI rank: Unique integer identifier assigned to each process within a communicator; drives data partitioning and determines which workload slice a process owns.
 - Address space: The private memory owned by a rank; one-sided MPI operations expose selected regions via windows so peers can access them without attaching to the host process's call stack.
 - Oversubscription: Running more software threads or MPI ranks than available hardware execution contexts; increases latency and cache contention, so use only when hiding I/O stalls or testing scalability on limited hardware.
 
 ### MPI Synchronization & Collectives
 - `MPI_Barrier`: Blocking collective that forces all ranks in a communicator to wait until everyone arrives; helpful for phase transitions or timing sections but avoid overuse because it serializes progress.
+- `MPI_Bcast`: Broadcasts a buffer from the root rank to all ranks in the communicator; often used to distribute configuration or halo data at the start of a phase.
+- `MPI_Scatter`: Root splits an array into equally sized chunks and sends one chunk to each rank; good for distributing independent work units.
+- `MPI_Gather`: Collects equal-sized buffers from all ranks and concatenates them at the root; inverse of `MPI_Scatter` and handy for assembling results.
+- `MPI_Reduce`: Combines values from all ranks using an associative operation and returns the result to the root; pair with `MPI_Allreduce` when everyone needs the answer.
 - `MPI_Allreduce`: Combines values from all ranks with an associative operation (sum, max, logical and, etc.) and broadcasts the result to everyone; essential for global norms, dot products, and convergence checks.
+- `MPI_Exscan`: Exclusive prefix reduction where rank `i` receives the reduction of values from ranks `< i`; useful for computing offsets without including the local contribution.
+
+### MPI Point-to-Point Primitives
+- `MPI_Send`: Blocking send that hands a buffer to the MPI library; the call may block until the matching receive is posted depending on mode and buffer availability.
+- `MPI_Recv`: Blocking receive that waits for a matching message (by communicator, source, and tag) and copies payload into the provided buffer.
+- `MPI_Sendrecv`: Combined operation that sends and receives in one call, avoiding deadlocks from overlapping blocking sends/receives and enabling simple halo exchanges.
+
+### MPI Ordering & Matching
+- MPI ordering: Within a communicator, messages sent from a given source to a destination with the same tag arrive in send order; different tags or communicators are unordered unless the program enforces sequencing.
+- Collective matching: All ranks in a communicator must call the same collective in the same order with compatible datatypes/counts; mismatches lead to hangs or corrupt data.
+- MPI deadlock: State where processes are permanently blocked waiting for messages or collectives that never arrive, often due to mismatched ordering, missing receives, or circular wait patterns.
 
 ### MPI Remote Memory Access (RMA)
+- MPI one-sided communication: Origin rank performs reads/writes on a target's exposed window without requiring the target to call a matching routine at the same time; synchronization is decoupled from data transfer.
+- MPI RMA: MPI's one-sided interface built around windows, epochs, and operations like put/get/accumulate to overlap communication with computation and reduce synchronization.
+- `MPI_Fence`: Collective synchronization on an RMA window that starts or ends an access epoch; all ranks in the communicator must call it in matching order.
 - `MPI_Get`: One-sided read that fetches data from a target rank's exposed window without involving the target CPU in the critical path; complete the access with matching fence or lock/unlock calls to ensure ordering.
 - `MPI_Put`: One-sided write pushing data into a target window; enables overlap by letting the origin rank continue once the transfer is initiated, subject to subsequent synchronization.
 - `MPI_Accumulate`: Atomic read-modify-write on a remote window using a specified operation (e.g., sum, max); ideal for distributed counters or assembling halo contributions without explicit receive loops.
@@ -134,11 +161,14 @@ Parallel programming structures computations to run simultaneously across cores,
 - `MPI_Put/Get` vs `MPI_Send/Recv`: One-sided operations decouple the origin and target call sites—origins issue puts/gets once a window is exposed, while two-sided messaging requires both endpoints to call matching send/recv; choose RMA to improve overlap or avoid polling progress engines, but fall back to two-sided when you need built-in matching, fairness, or simpler ordering semantics.
 
 ### MPI Thread Support Levels
+- MPI thread support: Declares how many application threads may call into MPI concurrently; query with `MPI_Init_thread` to choose between safer semantics and lower overhead.
 - `MPI_THREAD_SINGLE`: Only one thread exists in the process; simplest level with minimal internal locking overhead.
 - `MPI_THREAD_SERIALIZED`: Multiple application threads may exist, but at most one may make MPI calls at a time; enforce with external mutexes or thread funnels.
 - `MPI_THREAD_MULTIPLE`: Fully concurrent MPI calls from multiple threads are permitted; offers maximal flexibility but depends on the implementation's locking granularity for performance.
 
 ### Memory Hierarchy & Locality
+- Cache hierarchy: Multi-level structure (L1 → L2 → LLC) that buffers DRAM with progressively larger, slower caches; each level
+  tries to service misses from the level above to cut average latency.
 - Cache: Small, fast memory that keeps recently used data to reduce average access latency.
 - Cache line: Minimum transfer unit between memory and cache (e.g., 64 bytes).
 - Cache block: Alternative term for a cache line; caches move and tag memory in these fixed-size chunks.
@@ -168,12 +198,17 @@ Parallel programming structures computations to run simultaneously across cores,
 - Random replacement: Selects a victim line uniformly at random; cheap and effective when access patterns lack predictability.
 
 ### Cache Miss Types
+- Cache miss: Access that cannot be served from the current cache level, forcing a fetch from the next level and incurring miss
+  penalty latency.
 - Compulsory miss: First access (cold) miss; data has not been loaded yet.
 - Conflict miss: Limited associativity maps multiple blocks to the same set, causing avoidable misses.
 - Capacity miss: Working set exceeds cache size, causing misses even with optimal placement.
 - Read miss: Load request that finds the target line absent; can stall execution until the line returns from the next level.
 - Write miss: Store request to a line not present; handled via write-allocate (fetch then update) or write-no-allocate (write-around) policies.
 - Eviction: Removal of a line to make space for another; dirty evictions trigger write-back, while clean lines can be dropped.
+- Cold start miss: Synonym for a compulsory miss seen when caches are empty after startup or a flush.
+- Infinite cache: Idealized model that assumes unbounded capacity/associativity so only compulsory (cold) misses remain; useful
+  for bounding algorithmic locality without hardware limits.
 
 ### Cache Thrashing
 - Definition: Pathological sequence of accesses that repeatedly evicts and reloads cache lines, typically due to many active addresses mapping to the same set (conflict-driven). Results in very high miss rates and low effective cache reuse.
@@ -198,6 +233,14 @@ Parallel programming structures computations to run simultaneously across cores,
 - Miss penalty: Additional latency or cycles required to service a miss from the next level (hundreds of cycles when falling back to DRAM).
 - One-eighth miss ratio: Rule-of-thumb target where only 1 in 8 accesses miss (12.5%); keeping miss ratios near or below this level prevents bandwidth from dominating execution time.
 - Throughput: Useful work per unit time (e.g., FLOPs/s, tasks/s); depends jointly on compute resources, memory bandwidth, and the miss penalty profile.
+
+### CUDA & GPU Execution
+- GPU memory hierarchy: Registers and shared memory sit on-chip for low latency, L1/L2 caches provide general-purpose caching, and global/texture/constant memory reside in device DRAM with far higher latency.
+- Shared memory: Programmable on-chip scratchpad scoped to a thread block; delivers fast reuse when accesses avoid bank conflicts and stay within capacity (tens of KB).
+- Thread block: Cooperative group of threads scheduled together on a streaming multiprocessor (SM); threads in a block can synchronize and share data via shared memory.
+- Warp: Hardware scheduling unit of typically 32 threads that execute the same instruction in lockstep; divergence within a warp serializes execution paths.
+- `__syncthreads`: Block-level barrier that also acts as a memory fence for shared memory, ensuring all threads reach the point before proceeding.
+- Memory visibility: Writes to shared memory become visible to other threads in the block only after appropriate barriers; global memory updates become visible to other blocks after kernel completion or explicit memory fences.
 
 ### MESI Protocol
 - States: Modified, Exclusive, Shared, Invalid—each cache line lives in one state per core, dictating read/write permissions and coherence actions.
@@ -341,6 +384,7 @@ Parallel programming structures computations to run simultaneously across cores,
 - Trade-offs: Larger code size can pressure I-cache; higher register pressure may cause spills; tune unroll factors (e.g., 2–8) empirically.
 - Variants: Unroll-and-jam for nested loops; pair with software pipelining and prefetching for streaming kernels.
 
+- Prefetching: Proactively fetching data into cache ahead of use to overlap memory latency with computation; works best for predictable strides or stream-like patterns.
 - Prefetcher: Hardware or software mechanism that predicts future accesses and pulls lines into cache early, hiding miss latency when patterns are regular.
 - Hardware: Modern CPUs/GPU SMs detect streams/strides and issue prefetches; effectiveness drops for irregular access patterns.
 - Software: Insert explicit prefetch hints (e.g., `_mm_prefetch`) with a distance ≈ memory_latency / cycles_per_iteration; use non-temporal hints for one-time streams.
@@ -378,3 +422,72 @@ Parallel programming structures computations to run simultaneously across cores,
 ### Correctness & Formal Methods
 - Theorem proving: Uses automated or interactive proof assistants (Coq, Isabelle, Lean) to mathematically verify that concurrent algorithms satisfy specifications; valuable for lock-free data structures and protocol proofs.
 - Correct code vs optimized code: Always establish functional correctness and race freedom before micro-optimizing; unsafe speedups risk heisenbugs that erase performance gains when debugging or rolling back.
+
+### Parallel Sorting
+- PSRS (Parallel Sorting by Regular Sampling): Deterministic parallel sort that samples input, picks splitter keys, locally sorts, redistributes partitions, and merges; scales well when partitions are balanced and communication is pipelined.
+- Regular sampling: Select evenly spaced elements from locally sorted subarrays to approximate global distribution and choose fair splitters.
+- Random sampling: Use randomly chosen keys instead of evenly spaced ones; simpler to implement but introduces variance in partition sizes.
+- Splitter keys: Sampled keys that divide the global range into buckets; all ranks route elements to the bucket matching their key range.
+- Load imbalance: Uneven bucket sizes that leave some ranks with more data or work; mitigated by better splitter selection, oversampling, or repartitioning.
+- Parallel histogram sort: Builds local histograms of key frequencies, exchanges counts to form global histograms, and assigns bucket ranges before redistributing elements.
+- Histogram refinement: Iteratively tightens histogram buckets to reduce skew or adapt to unknown distributions, trading extra passes for better balance.
+- Non-comparison sort: Sorting based on key structure (radix/counting sort) rather than comparisons; useful in parallel when key ranges are bounded and communication can be organized by digits/buckets.
+
+### Parallel Communication Algorithms
+- Binary tree broadcast: Root sends to one child, children forward to their children, doubling recipients each step; cuts broadcast depth to `O(log P)`.
+- Hypercube: Logarithmic-diameter topology where each node has `log2(P)` neighbors differing in one bit; supports efficient all-to-all exchanges and reductions.
+- Mesh topology: Nodes laid out in a 2D/3D grid with nearest-neighbor links; favors locality-aware mapping and stencil workloads but has larger diameters than trees or hypercubes.
+- Network diameter: Longest shortest-path between any two nodes; bounds latency for worst-case communication patterns.
+- Node degree: Number of direct neighbors a node connects to; higher degree increases bandwidth options but raises cost/complexity.
+- Bisection bandwidth: Aggregate bandwidth across the smallest cut that divides the network into two equal halves; gauges how well the fabric handles global traffic.
+- Critical path: Longest dependent sequence of communication or computation steps that limits achievable speedup; shortening it improves total runtime even if parallel slack remains.
+- Pipelining: Overlap different stages (send/compute/receive) so new work starts before previous steps finish; reduces apparent latency when dependencies allow streaming.
+
+### Communication Cost Model
+- Latency (alpha): Fixed startup cost per message regardless of size; dominates when sending many tiny messages.
+- Bandwidth cost (beta): Reciprocal of sustained bandwidth, modeling time per byte transferred; becomes dominant for large messages.
+- Message size: Payload length that scales the bandwidth term in `T = α + β · n`; motivates batching small messages and chunking large ones to overlap communication.
+- Critical path analysis: Identify dependent message chains that dictate completion time; schedule to shorten or overlap them to improve scalability.
+
+### Scatter Algorithms
+- Naive scatter: Root performs `P-1` sequential sends to distribute chunks; simple but costs `O(P)` latency steps.
+- Tree-based scatter: Root sends to a subset of ranks which forward to others in a tree, reducing scatter depth to `O(log P)`.
+- One-port model: Assumes each process can inject or receive only one message at a time; influences optimal scatter/reduction tree designs and overlap assumptions.
+
+### Reduction Trees
+- Pairwise averaging: Combine values from two ranks at a time in log-depth stages, halving participants each round until a single result remains.
+- Hypercube exchange: Each rank exchanges and reduces with partners differing in one bit position per step; completes reductions in `log2(P)` stages with balanced traffic.
+- Global average: Compute sum via reduction/allreduce and divide by global count; tree topology choice controls latency and bandwidth usage.
+
+### Checkpointing & Fault Tolerance
+- Fault tolerance: Techniques that allow programs to continue or restart after failures; includes redundancy, checkpoint/restart, and algorithm-based fault tolerance.
+- MTBF: Mean time between failures; informs how often to checkpoint to minimize expected wasted work.
+- Checkpoint interval: Time between successive checkpoints; tuned to balance checkpoint overhead against lost work after failures.
+- Checkpoint overhead: Time and bandwidth consumed to write checkpoint data; reduce via compression, incremental checkpoints, or multi-level storage.
+- Recovery time: Time to reload state and resume after a failure; depends on checkpoint size, storage speed, and reconfiguration steps.
+- Young’s formula: Approximate optimal checkpoint interval `T_opt ≈ sqrt(2 · C · MTBF)` where `C` is checkpoint time (assumes instantaneous restart, exponential failures).
+- Daly model: Refines Young’s result by including restart overhead and higher-order terms, yielding `T_opt ≈ sqrt(2 · C · MTBF) - C` under common assumptions.
+
+### Parallel Discrete Event Simulation
+- Optimistic concurrency control: Processes execute events without strict global synchronization and roll back if causality is violated.
+- Time Warp: Classic optimistic PDES algorithm that logs state, processes events aggressively, and performs rollbacks with anti-messages when out-of-order events arrive.
+- Rollback: Reverting simulation state to a prior checkpoint when a straggler event with an earlier timestamp arrives.
+- Straggler event: Late-arriving event with a smaller timestamp than previously processed events; triggers rollbacks under optimistic execution.
+- Causality violation: Occurs when events are processed out of timestamp order, breaking simulation correctness; conservative protocols prevent it, optimistic ones detect and roll back.
+
+### Hybrid MPI + OpenMP
+- Thread-level parallelism: Shared-memory parallel work within an MPI process via OpenMP threads to exploit intra-node cores.
+- Process-level parallelism: Distributed-memory decomposition across MPI ranks to scale across nodes; combine with OpenMP to reduce MPI rank counts and communication overhead.
+
+### Communication Cost Planning
+- Communication cost model: Framework that estimates runtime using latency/bandwidth parameters, message counts, and overlap assumptions to guide algorithm design.
+- Critical path analysis: Evaluate which communication steps cannot be overlapped and thus bound total time; informs reordering or pipelining opportunities.
+
+### Performance Concepts
+- Scalability: How performance improves as resources increase; strong scaling fixes problem size, weak scaling grows it with resources.
+- Isoefficiency: Function that relates problem size growth to processor count needed to maintain a fixed efficiency; lower is better.
+- Speedup: Ratio of serial runtime to parallel runtime; ideal speedup equals processor count but is reduced by overheads and serial work.
+- Efficiency: Speedup divided by processor count; measures how well added resources are utilized.
+- Load balance: Even distribution of work so all processing elements stay busy; imbalance causes idle time and reduced efficiency.
+- Synchronization: Coordination actions (barriers, locks, atomics) that impose waiting; excessive synchronization limits scaling.
+- Serialization: Unavoidable sequential portions or contended sections that force one-at-a-time progress, capping achievable speedup.
