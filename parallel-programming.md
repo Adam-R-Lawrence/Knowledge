@@ -282,8 +282,10 @@ Parallel programming structures computations to run simultaneously across cores,
 ### Aliasing & `restrict`
 - Aliasing: Occurs when two expressions reference the same memory location; forces compilers to assume writes may affect reads, limiting reordering and vectorization.
 - Pointer aliasing: Multiple pointers into overlapping regions; analyze hot loops to ensure each thread operates on disjoint slices when possible.
-- `restrict` keyword: C qualifier promising that a pointer is the sole reference to its pointed-to data; frees the compiler to reorder loads/stores and emit wider SIMD when the promise holds (never violate it—undefined behavior).
-- `restrict` qualifier: Applies the same promise to pointer-qualified struct members or typedefs; combine with const/volatile as needed but ensure the non-alias contract is actually met.
+- `restrict` in C: Qualifies an object pointer and establishes an access-association contract for that pointer within its block; when the contract applies, accesses to the object must use that pointer or values based on it, enabling stronger optimization.
+- C++ status: Standard C++ has no `restrict` keyword. GCC and Clang accept extensions such as `__restrict` or `__restrict__`, but portable C++ cannot rely on them.
+- Portability: C++23 `[[assume(expression)]]` supplies an optimizer assumption about a boolean expression; it is not a portable replacement for `restrict` and does not establish C's pointer-access rules.
+- Safety: Violating C's applicable `restrict` association rules has undefined behavior; use vendor C++ extensions only when their documented non-aliasing contract is satisfied.
 - Array overlap: When different indices or slices of an array refer to intersecting memory; restructure data or copy to temporaries so hot kernels see disjoint regions and the compiler can vectorize aggressively.
 
 ### Context Switch Time
@@ -378,3 +380,25 @@ Parallel programming structures computations to run simultaneously across cores,
 ### Correctness & Formal Methods
 - Theorem proving: Uses automated or interactive proof assistants (Coq, Isabelle, Lean) to mathematically verify that concurrent algorithms satisfy specifications; valuable for lock-free data structures and protocol proofs.
 - Correct code vs optimized code: Always establish functional correctness and race freedom before micro-optimizing; unsafe speedups risk heisenbugs that erase performance gains when debugging or rolling back.
+
+### `cudaStream_t`
+- Definition: Handle type for CUDA streams—ordered sequences of operations (kernels and copies) issued to a device.
+- Usage: Create via `cudaStreamCreate*`, pass to kernel launches (`<<<grid, block, sharedMem, stream>>>`) and async APIs; destroy with `cudaStreamDestroy` when no longer needed.
+- Default stream: Stream `0` can use legacy semantics, which synchronize with blocking streams in the same context, or per-thread semantics, which behave like an ordinary stream; select the mode with CUDA's documented compiler option or macro.
+- Performance: Independent streams permit overlap when dependencies and hardware resources allow it; use events or explicit stream synchronization to express cross-stream ordering.
+
+### `cudaDeviceSynchronize`
+- Behavior: Blocks the host thread until all previously issued work on the current device (in all streams) completes; effectively a global device barrier.
+- When to use: After enqueuing async work when the host must observe results, or to surface launch errors eagerly; avoid in steady-state code because it prevents overlap.
+- Notes: Spelling is `cudaDeviceSynchronize` (no extra “h”); prefer finer-grained sync (events, stream sync) to maintain pipeline parallelism.
+
+### `cudaGetLastError`
+- Purpose: Returns and clears the last CUDA runtime error status for the calling host thread; allows deferred error checking after kernel launches.
+- Pattern: Call immediately after a kernel launch to detect launch-configuration errors at that site; use a later synchronization call to detect errors that occur during asynchronous execution.
+- Caveat: Each call resets the error flag to `cudaSuccess`; pair with `cudaPeekAtLastError` when you need to observe errors without clearing them.
+
+### `cudaMalloc`
+- Role: Allocates device (GPU) memory; signature `cudaError_t cudaMalloc(void** ptr, size_t size)` writes a device pointer into `*ptr`.
+- Behavior: Sets `*ptr` to `nullptr` on failure; successfully allocated memory is not initialized, remains allocated until released, and is suitably aligned for any built-in type.
+- Synchronization: Ordinary device allocation is an implicit cross-stream synchronization point; use pools and the stream-ordered `cudaMallocAsync` API when frequent allocations must not serialize otherwise independent stream work.
+- Alternatives: Use `cudaMallocPitch` for pitched 2D allocations or `cudaMallocManaged` for Unified Memory when those memory models fit the access pattern.
