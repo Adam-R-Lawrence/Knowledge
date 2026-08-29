@@ -117,3 +117,29 @@ The 1D bar finite-element stiffness matrix is therefore
 which has exactly the same two-node form as a linear spring element with stiffness `k = EA/L`.
 
 Intuition: `EA` says how hard the cross-section is to stretch per unit strain, while `EA/L` says how hard the entire member is to stretch by a specified displacement. Two bars with the same `EA` but different lengths have the same axial rigidity but different structural stiffness; the shorter bar is stiffer.
+
+### Double Nodes at the Same Geometric Location
+
+Two finite-element nodes may have identical spatial coordinates but different node IDs and therefore different degrees of freedom. Geometrically they occupy the same point, but topologically they are distinct unknowns.
+
+This is useful when a field is allowed to be discontinuous across an interface, crack, cohesive zone, or contact surface. One element may connect to node `i^-` on one side and another element to node `i^+` on the other side, even though `x_i^- = x_i^+`. Then the approximation can have `u_i^- != u_i^+`, so a displacement jump can occur at that location.
+
+If the two nodes are tied by a constraint such as `u_i^- = u_i^+`, they behave like a single continuous node. If they are intentionally left independent, they represent two coincident material points or two traces of the field. If duplicate coincident nodes are introduced accidentally and are not properly connected or constrained, they can create disconnected pieces, mechanisms, or extra zero-energy modes and make the stiffness matrix singular.
+
+A coincident-node pair is therefore not automatically a bad mesh: it is a topological device whose meaning is determined by connectivity and constraints, not by coordinates alone.
+
+### Zero in an Integral Sense in FEM
+
+A weak formulation does not normally require the strong residual `R(u)` to vanish at every point. Instead it requires the residual to vanish when tested against admissible test functions:
+
+`int_Omega v R(u) dOmega = 0` for all admissible `v`.
+
+In the continuous weak problem, if `R` is an ordinary integrable function and this identity holds for every sufficiently rich test function, then `R = 0` almost everywhere. The residual may differ from zero on a set of measure zero without changing the integral statement.
+
+In discrete Galerkin FEM the statement is weaker:
+
+`int_Omega v_h R(u_h) dOmega = 0` for every `v_h` in the finite-dimensional test space `V_h`.
+
+This does not imply that `R(u_h) = 0` pointwise or even almost everywhere. It means only that the residual is orthogonal to the discrete test space. The residual can be nonzero between nodes and inside elements while all Galerkin weighted residual equations are exactly satisfied.
+
+This distinction is central to FEM: the discrete solution satisfies the PDE in a projected or weak sense, rather than by forcing the strong-form residual to be zero at every spatial point.
