@@ -13,8 +13,8 @@ Examples in Euclidean space include:
 
 - a single point in 1D, 2D, or 3D,
 - any finite or countable collection of points,
-- a curve in a 2D domain,
-- a surface in a 3D volume.
+- a smooth or rectifiable curve in a 2D domain,
+- a smooth surface in a 3D volume.
 
 A measure-zero set need not be empty. It may even contain infinitely many points. The statement is only that it contributes zero measure to a volume integral.
 
@@ -36,7 +36,7 @@ For a linear operator `L`, consider
 
 `L u = f`.
 
-The associated homogeneous problem is
+The associated homogeneous differential equation is
 
 `L u_h = 0`.
 
@@ -63,5 +63,7 @@ a particular solution is `u_p = -3`, while the homogeneous equation
 has solutions `u_h = C1 exp(x) + C2 exp(-x)`. Therefore
 
 `u = -3 + C1 exp(x) + C2 exp(-x)`.
+
+For a boundary-value problem, the word homogeneous can also refer specifically to homogeneous boundary data, such as `u = 0` on a Dirichlet boundary or `du/dn = 0` on a Neumann boundary. A fully homogeneous boundary-value problem has both zero forcing and homogeneous boundary data.
 
 In PDE and FEM language, homogeneous solutions are closely connected to the kernel or nullspace of the differential operator. For example, rigid-body motions are homogeneous zero-energy solutions of unconstrained linear elasticity. A pure-Neumann elasticity problem retains these homogeneous modes, which is why its displacement is not unique until the rigid-body freedom is removed.
